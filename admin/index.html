@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SynkBot Admin - Gestión RAG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0a0a0f;
+      color: #fff;
+      min-height: 100vh;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .logo { display: flex; align-items: center; gap: 0.75rem; }
+    .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, #00ff88, #00d4ff); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+    .logo-icon svg { width: 24px; height: 24px; fill: #0a0a0f; }
+    h1 { font-size: 1.5rem; font-weight: 700; }
+    .subtitle { color: #00ff88; font-size: 0.875rem; }
+
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.5rem; }
+    .stat-label { font-size: 0.875rem; color: rgba(255,255,255,0.5); margin-bottom: 0.5rem; }
+    .stat-value { font-size: 2rem; font-weight: 700; color: #00ff88; }
+
+    .tabs { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+    .tab { padding: 0.75rem 1.5rem; background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: rgba(255,255,255,0.7); cursor: pointer; transition: all 0.2s; }
+    .tab.active { background: linear-gradient(135deg, #00ff88, #00d4ff); color: #0a0a0f; border-color: transparent; }
+    .tab:hover:not(.active) { border-color: #00ff88; color: #00ff88; }
+
+    .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+    .card-title { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+
+    .form-group { margin-bottom: 1rem; }
+    label { display: block; font-size: 0.875rem; color: rgba(255,255,255,0.7); margin-bottom: 0.5rem; }
+    input, select, textarea { width: 100%; padding: 0.75rem 1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 0.875rem; transition: border-color 0.2s; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #00ff88; }
+    textarea { min-height: 150px; resize: vertical; }
+
+    .btn { padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; }
+    .btn-primary { background: linear-gradient(135deg, #00ff88, #00d4ff); color: #0a0a0f; }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-danger:hover { background: #dc2626; }
+
+    .doc-list { max-height: 400px; overflow-y: auto; }
+    .doc-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 0.5rem; }
+    .doc-info { flex: 1; }
+    .doc-title { font-weight: 600; margin-bottom: 0.25rem; }
+    .doc-meta { font-size: 0.75rem; color: rgba(255,255,255,0.5); }
+    .doc-tags { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+    .tag { font-size: 0.625rem; padding: 0.25rem 0.5rem; background: rgba(139, 92, 246, 0.2); color: #a78bfa; border-radius: 4px; }
+
+    .message { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+    .message.success { background: rgba(0, 255, 136, 0.1); border: 1px solid rgba(0, 255, 136, 0.3); color: #00ff88; }
+    .message.error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; }
+
+    .upload-zone { border: 2px dashed rgba(255,255,255,0.2); border-radius: 12px; padding: 3rem; text-align: center; cursor: pointer; transition: all 0.2s; }
+    .upload-zone:hover { border-color: #00ff88; background: rgba(0, 255, 136, 0.05); }
+    .upload-zone.dragover { border-color: #00ff88; background: rgba(0, 255, 136, 0.1); }
+    .upload-icon { font-size: 3rem; margin-bottom: 1rem; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: rgba(0, 255, 136, 0.3); border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        </div>
+        <div>
+          <h1>SynkBot Admin</h1>
+          <p class="subtitle">Gestión de Base de Conocimiento</p>
+        </div>
+      </div>
+      <a href="https://synkbot.synkdata.online" style="color: #00ff88; text-decoration: none;">← Ver Bot</a>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <p class="stat-label">Total Documentos</p>
+        <p class="stat-value" id="totalDocs">-</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Categorías</p>
+        <p class="stat-value" id="totalCategories">-</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Conversaciones</p>
+        <p class="stat-value" id="totalConversations">-</p>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('documents')">📄 Documentos</button>
+      <button class="tab" onclick="showTab('upload')">📤 Subir Archivo</button>
+      <button class="tab" onclick="showTab('manual')">✏️ Agregar Manual</button>
+    </div>
+
+    <div id="message"></div>
+
+    <!-- Tab: Documents List -->
+    <div id="tab-documents" class="tab-content">
+      <div class="card">
+        <h3 class="card-title">📚 Documentos Indexados</h3>
+        <div class="doc-list" id="docList">
+          <p style="color: rgba(255,255,255,0.5); text-align: center; padding: 2rem;">Cargando...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Upload File -->
+    <div id="tab-upload" class="tab-content" style="display: none;">
+      <div class="card">
+        <h3 class="card-title">📤 Subir Archivo de Texto</h3>
+        <div class="form-group">
+          <label>Categoría</label>
+          <select id="uploadCategory">
+            <option value="general">General</option>
+            <option value="VentasPro">VentasPro</option>
+            <option value="IMSS-Intel">Laboratorio IMSS-Intel</option>
+            <option value="DevOps">DevOps</option>
+            <option value="precios">Precios y Cotizaciones</option>
+          </select>
+        </div>
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+          <div class="upload-icon">📁</div>
+          <p>Arrastra un archivo .txt o .md aquí</p>
+          <p style="font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 0.5rem;">o haz clic para seleccionar</p>
+          <input type="file" id="fileInput" accept=".txt,.md,.csv" style="display: none;" onchange="handleFileSelect(event)">
+        </div>
+        <div id="filePreview" style="margin-top: 1rem;"></div>
+        <button class="btn btn-primary" style="margin-top: 1rem; width: 100%;" id="uploadBtn" onclick="uploadFile()" disabled>
+          Indexar Archivo
+        </button>
+      </div>
+    </div>
+
+    <!-- Tab: Manual Add -->
+    <div id="tab-manual" class="tab-content" style="display: none;">
+      <div class="card">
+        <h3 class="card-title">✏️ Agregar Documento Manualmente</h3>
+        <form id="manualForm" onsubmit="submitManual(event)">
+          <div class="form-group">
+            <label>Título *</label>
+            <input type="text" id="docTitle" required placeholder="Ej: Características de VentasPro">
+          </div>
+          <div class="form-group">
+            <label>Categoría</label>
+            <select id="docCategory">
+              <option value="general">General</option>
+              <option value="VentasPro">VentasPro</option>
+              <option value="IMSS-Intel">Laboratorio IMSS-Intel</option>
+              <option value="DevOps">DevOps</option>
+              <option value="precios">Precios y Cotizaciones</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Tags (separados por coma)</label>
+            <input type="text" id="docTags" placeholder="crm, ventas, reportes">
+          </div>
+          <div class="form-group">
+            <label>Contenido *</label>
+            <textarea id="docContent" required placeholder="Escribe toda la información que quieres que SynkBot conozca sobre este tema..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">
+            Agregar a Base de Conocimiento
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'https://api.synkdata.online/api/v1';
+
+    // Load stats on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadStats();
+      loadDocuments();
+      setupDragDrop();
+    });
+
+    async function loadStats() {
+      try {
+        const res = await fetch(`${API_URL}/rag/stats`);
+        const data = await res.json();
+        document.getElementById('totalDocs').textContent = data.total_documents || 0;
+        document.getElementById('totalCategories').textContent = data.categories?.length || 0;
+        document.getElementById('totalConversations').textContent = data.total_conversations || 0;
+      } catch (e) {
+        console.error('Error loading stats:', e);
+      }
+    }
+
+    async function loadDocuments() {
+      try {
+        const res = await fetch(`${API_URL}/rag/documents`);
+        const data = await res.json();
+        const docList = document.getElementById('docList');
+
+        if (!data.documents || data.documents.length === 0) {
+          docList.innerHTML = '<p style="color: rgba(255,255,255,0.5); text-align: center; padding: 2rem;">No hay documentos. ¡Agrega el primero!</p>';
+          return;
+        }
+
+        docList.innerHTML = data.documents.map(doc => `
+          <div class="doc-item">
+            <div class="doc-info">
+              <div class="doc-title">${doc.metadata?.title || 'Sin título'}</div>
+              <div class="doc-meta">
+                ID: ${doc.id.substring(0, 8)}... |
+                Categoría: ${doc.metadata?.category || 'general'} |
+                Origen: ${doc.metadata?.source || 'manual'}
+              </div>
+              ${doc.metadata?.tags ? `<div class="doc-tags">${doc.metadata.tags.split(',').map(t => `<span class="tag">${t.trim()}</span>`).join('')}</div>` : ''}
+            </div>
+            <button class="btn btn-danger" onclick="deleteDoc('${doc.id}')" style="padding: 0.5rem 1rem; font-size: 0.75rem;">Eliminar</button>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error('Error loading documents:', e);
+        document.getElementById('docList').innerHTML = '<p style="color: #ef4444;">Error al cargar documentos. Verifica que el backend esté funcionando.</p>';
+      }
+    }
+
+    function showTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+      document.getElementById(`tab-${tabName}`).style.display = 'block';
+      event.target.classList.add('active');
+    }
+
+    function showMessage(text, type = 'success') {
+      document.getElementById('message').innerHTML = `<div class="message ${type}">${text}</div>`;
+      setTimeout(() => document.getElementById('message').innerHTML = '', 5000);
+    }
+
+    async function submitManual(e) {
+      e.preventDefault();
+      const title = document.getElementById('docTitle').value;
+      const category = document.getElementById('docCategory').value;
+      const tags = document.getElementById('docTags').value.split(',').map(t => t.trim()).filter(t => t);
+      const content = document.getElementById('docContent').value;
+
+      try {
+        const res = await fetch(`${API_URL}/rag/documents`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, content, category, tags })
+        });
+
+        if (res.ok) {
+          showMessage('✅ Documento agregado exitosamente');
+          document.getElementById('manualForm').reset();
+          loadStats();
+          loadDocuments();
+        } else {
+          showMessage('❌ Error al guardar el documento', 'error');
+        }
+      } catch (e) {
+        showMessage('❌ Error de conexión con el servidor', 'error');
+      }
+    }
+
+    // File upload handling
+    let selectedFile = null;
+
+    function setupDragDrop() {
+      const zone = document.getElementById('uploadZone');
+
+      zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        zone.classList.add('dragover');
+      });
+
+      zone.addEventListener('dragleave', () => {
+        zone.classList.remove('dragover');
+      });
+
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+          handleFile(e.dataTransfer.files[0]);
+        }
+      });
+    }
+
+    function handleFileSelect(e) {
+      if (e.target.files.length) {
+        handleFile(e.target.files[0]);
+      }
+    }
+
+    function handleFile(file) {
+      selectedFile = file;
+      const preview = document.getElementById('filePreview');
+      preview.innerHTML = `
+        <div style="background: rgba(0,255,136,0.1); padding: 1rem; border-radius: 8px;">
+          <strong>📄 ${file.name}</strong>
+          <span style="color: rgba(255,255,255,0.5); margin-left: 1rem;">${(file.size / 1024).toFixed(1)} KB</span>
+        </div>
+      `;
+      document.getElementById('uploadBtn').disabled = false;
+    }
+
+    async function uploadFile() {
+      if (!selectedFile) return;
+
+      const category = document.getElementById('uploadCategory').value;
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('category', category);
+
+      const btn = document.getElementById('uploadBtn');
+      btn.disabled = true;
+      btn.textContent = 'Indexando...';
+
+      try {
+        const res = await fetch(`${API_URL}/rag/upload-file`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          showMessage(`✅ ${data.message}`);
+          selectedFile = null;
+          document.getElementById('filePreview').innerHTML = '';
+          document.getElementById('fileInput').value = '';
+          loadStats();
+          loadDocuments();
+        } else {
+          showMessage('❌ Error al subir el archivo', 'error');
+        }
+      } catch (e) {
+        showMessage('❌ Error de conexión', 'error');
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Indexar Archivo';
+    }
+
+    async function deleteDoc(docId) {
+      if (!confirm('¿Estás seguro de eliminar este documento?')) return;
+
+      try {
+        const res = await fetch(`${API_URL}/rag/documents/${docId}`, {
+          method: 'DELETE'
+        });
+
+        if (res.ok) {
+          showMessage('✅ Documento eliminado');
+          loadStats();
+          loadDocuments();
+        } else {
+          showMessage('❌ Error al eliminar', 'error');
+        }
+      } catch (e) {
+        showMessage('❌ Error de conexión', 'error');
+      }
+    }
+  </script>
+</body>
+</html>
